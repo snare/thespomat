@@ -61,11 +61,6 @@ class ThespomatBot(object):
         print("Loop it through Jones...")
 
         while True:
-            while len(self.api.GetUserTimeline()):
-                for tweet in self.api.GetUserTimeline():
-                    print("Deleting tweet id {}".format(tweet.id))
-                    self.api.DestroyStatus(tweet.id)
-
             last_s = None
             for s in self.srt:
                 if last_s:
@@ -81,19 +76,26 @@ class ThespomatBot(object):
                     for line in s.text.split('\n'):
                         twoots.extend([line[i:i + 140] for i in range(0, len(line), 140)])
                 for t in twoots:
-                    print(u"Tweeting: {}".format(t))
-                    try:
-                        self.api.PostUpdate(t)
-                    except Exception as e:
-                        print("Failed to twoot: {}".format(e))
+                    while True:
+                        print(u"Tweeting: {}".format(t))
+                        try:
+                            self.api.PostUpdate(t)
+                            break
+                        except Exception as e:
+                            print("Failed to twoot, sleeping {}: {}".format(self.config.rate_limit_delay, e))
+                            if e.message[0]['code'] == 185:
+                                time.sleep(self.config.rate_limit_delay)
+                            else:
+                                break
 
     def clear(self):
         """
         Clear the timeline.
         """
-        for tweet in self.api.GetUserTimeline():
-            print("Deleting tweet id {}".format(tweet.id))
-            self.api.DestroyStatus(tweet.id)
+        while len(self.api.GetUserTimeline()):
+            for tweet in self.api.GetUserTimeline():
+                print("Deleting tweet id {}".format(tweet.id))
+                self.api.DestroyStatus(tweet.id)
 
     def test_post_update(self, *args, **kwargs):
         print("PostUpdate(): args = {} kwargs = {}".format(args, kwargs))
