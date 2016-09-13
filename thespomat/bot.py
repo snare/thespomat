@@ -61,6 +61,11 @@ class ThespomatBot(object):
         print("Loop it through Jones...")
 
         while True:
+            while len(self.api.GetUserTimeline()):
+                for tweet in self.api.GetUserTimeline():
+                    print("Deleting tweet id {}".format(tweet.id))
+                    self.api.DestroyStatus(tweet.id)
+
             last_s = None
             for s in self.srt:
                 if last_s:
@@ -77,7 +82,10 @@ class ThespomatBot(object):
                         twoots.extend([line[i:i + 140] for i in range(0, len(line), 140)])
                 for t in twoots:
                     print(u"Tweeting: {}".format(t))
-                    self.api.PostUpdate(t)
+                    try:
+                        self.api.PostUpdate(t)
+                    except Exception as e:
+                        print("Failed to twoot: {}".format(e))
 
     def clear(self):
         """
